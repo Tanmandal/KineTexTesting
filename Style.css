@@ -5,7 +5,7 @@ body, .streamlit-expanderHeader {
     color: #f9f9fa !important;
 }
 
-/* Sidebar: dark translucent with blurred neon accent */
+/* Sidebar */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #18181d 80%, #252535 100%) !important;
     color: #ececf2 !important;
@@ -14,8 +14,11 @@ body, .streamlit-expanderHeader {
     border-radius: 2rem 0 0 2rem !important;
 }
 
-/* === UNIVERSAL BUTTON STYLE (same as sidebar) === */
-button, input[type="submit"], [data-testid="stSidebar"] button {
+/* === BUTTONS ===
+   Only target real Streamlit buttons (not the password toggle). */
+.stButton > button,
+input[type="submit"],
+[data-testid="stSidebar"] button {
     background: #232336 !important;
     color: #fff !important;
     padding: 1rem 1.5rem !important;
@@ -25,18 +28,17 @@ button, input[type="submit"], [data-testid="stSidebar"] button {
     font-size: 1.2rem !important;
     font-weight: 600 !important;
     border: none !important;
-    box-shadow: 0 0 0 transparent !important;
     transition: box-shadow 0.2s, background 0.2s;
     cursor: pointer;
 }
-
-button:hover, input[type="submit"]:hover, [data-testid="stSidebar"] button:hover {
+.stButton > button:hover,
+input[type="submit"]:hover,
+[data-testid="stSidebar"] button:hover {
     background: #2f234d !important;
     box-shadow: 0 0 18px 3px #be6fff55;
-    color: #fff !important;
 }
 
-/* HEADINGS: Clean, rounded, neon accent */
+/* === HEADINGS === */
 h1, h2, h3 {
     color: #faf8fb !important;
     font-weight: 700 !important;
@@ -47,12 +49,7 @@ h1 { font-size: 2.3rem; }
 h2 { font-size: 1.7rem; color: #bb94ff !important; }
 h3 { font-size: 1.25rem; color: #ffeb8a !important; }
 
-/* SECTION - Statistics header/panel */
-main section[data-testid="stMarkdownContainer"] {
-    background: transparent !important;
-}
-
-/* CONTAINERS: Glassy effect, subtle gradient, shadow */
+/* === CONTAINERS === */
 div[data-testid="stContainer"] {
     background: linear-gradient(115deg, #161624 90%, #231d2b 120%);
     border-radius: 2rem !important;
@@ -62,12 +59,10 @@ div[data-testid="stContainer"] {
     border: 1.5px solid #28203c20;
 }
 
-
-/* Columns */
+/* === COLUMNS === */
 div[data-testid="stColumns"] > div {
     padding: 1rem 1.2rem !important;
     border-radius: 1.1rem !important;
-    color: #ececf8 !important;
     font-size: 1.08rem !important;
     transition: background 0.2s;
     background: rgba(40,38,58,0.25) !important;
@@ -76,51 +71,77 @@ div[data-testid="stColumns"] > div:hover {
     background: rgba(186,111,255,0.13) !important;
 }
 
-/* INPUT FIELDS */
-input[type="text"],
-input[type="password"],
-div[data-baseweb="select"] {
-    border: 2px solid #be6fff80 !important;
-    background: #161624 !important;
-    border-radius: 1rem !important;
-    padding: 0.7rem 1rem !important;
-    color: #fff !important;
-    font-size: 1.06rem !important;
-    transition: border-color 0.25s;
-    width: 100% !important;          /* make both inputs full width */
+/* === INPUT FIELDS (username & password) === */
+[data-baseweb="input"] input[type="text"],
+[data-baseweb="input"] input[type="password"],
+[data-baseweb="select"] {
+    border: 2px solid #7a4dff80 !important;
+    background: linear-gradient(145deg, #1a1a28, #14141e) !important;
+    border-radius: 1.4rem !important;
+    padding: 0.8rem 1rem !important;
+    color: #f5f5fa !important;
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+    width: 100% !important;
     box-sizing: border-box !important;
+    transition: all 0.25s ease;
+    box-shadow: inset 0 1px 6px rgba(0,0,0,0.6);
 }
-input[type="text"]:focus,
-input[type="password"]:focus,
-div[data-baseweb="select"]:focus-within {
-    border-color: #ffe59f !important;
+
+/* Password input: reserve extra right padding so text doesn't overlap icon */
+[data-baseweb="input"] input[type="password"] {
+    padding-right: 0rem !important;
+}
+/* Glow effect on focus */
+[data-baseweb="input"] input[type="text"]:focus,
+[data-baseweb="input"] input[type="password"]:focus,
+[data-baseweb="select"]:focus-within {
+    border-color: #bb94ff !important;
+    box-shadow: 0 0 12px #bb94ff80;
     outline: none !important;
 }
 
-/* Password input container */
+/* === Password Eye Toggle === */
 [data-baseweb="input"] {
     position: relative;
     width: 100%;
 }
 
-/* Eye icon: push to far right, no text shift */
+/* Style the small password toggle button separately */
+[data-baseweb="input"] button,
 [data-baseweb="input"] [aria-label="Show password"],
-[data-baseweb="input"] [aria-label="Hide password"] {
+[data-baseweb="input"] [aria-label="Hide password"],
+button[aria-label="Show password"],
+button[aria-label="Hide password"] {
     position: absolute;
-    right: 0px;        /* stick to the right */
+    right: 0px;
     top: 50%;
-    transform: translateY(-50%) scale(0.85);
+    transform: translateY(-50%) scale(1);
     cursor: pointer;
-    margin: 0;
-    background: transparent !important;
+    padding: 10px !important;
+    width: auto !important;
+    min-width: 32px !important;
+    max-width: 48px !important;
+    height: auto !important;
+    border-radius: 999px !important;
+    background: rgb(72, 50, 144) !important;
+    border: none !important;
+    box-shadow: none !important;
 }
-/* Images */
+[data-baseweb="input"] button:hover,
+[data-baseweb="input"] [aria-label="Show password"]:hover,
+[data-baseweb="input"] [aria-label="Hide password"]:hover {
+    background: rgba(187,148,255,0.22) !important;
+    transform: translateY(-50%) scale(1.08);
+}
+
+/* === IMAGES === */
 img {
     border-radius: 1.2rem !important;
     box-shadow: 0 3px 16px 2px #6331ff22, 0 1px 8px #ffe59f22;
 }
 
-/* Alerts */
+/* === ALERTS === */
 div[role="alert"] > .stAlert-success {
     background: linear-gradient(110deg, #e3fcec 70%, #ffe59f 180%);
     color: #1e2e21 !important;
@@ -136,7 +157,7 @@ div[role="alert"] > .stAlert-error {
     padding: 1.2rem;
 }
 
-/* Dialogs */
+/* === DIALOGS === */
 div[role="dialog"] {
     background: linear-gradient(125deg, #1c18269e 99%, #bb94ff27 120%);
     border-radius: 1.5rem !important;
@@ -145,7 +166,7 @@ div[role="dialog"] {
     color: #fff !important;
 }
 
-/* Links */
+/* === LINKS === */
 a {
     color: #bb94ff !important;
     text-decoration: none !important;
@@ -156,19 +177,29 @@ a:hover {
     text-decoration: underline !important;
 }
 
-/* Divider */
+/* === DIVIDER === */
 hr {
     border: none !important;
     border-top: 2px solid #bb94ff55 !important;
     margin: 2rem 0 !important;
 }
 
-/* Hide Streamlit top bar, header, footer */
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-footer {visibility: hidden;}
+/* Hide only Streamlit branding + deploy button */
+#MainMenu {visibility: hidden;}  /* hides "hamburger" menu */
+footer {visibility: hidden;}    /* hides footer */
 
-/* Responsive tweaks */
+/* Hide only the Deploy button in the top header */
+button[kind="header"][data-testid="stBaseButton-header"] span:contains("Deploy") {
+    display: none !important;
+}
+
+/* Fallback: hide by text content */
+button[kind="header"][data-testid="stBaseButton-header"] {
+    display: none !important;
+}
+
+
+/* === RESPONSIVE === */
 @media (max-width: 640px) {
     h1 { font-size: 1.3rem; }
     h2 { font-size: 1.05rem; }
