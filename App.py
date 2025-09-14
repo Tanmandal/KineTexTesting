@@ -6,6 +6,10 @@ import extra as ex
 from PIL import Image
 import time
 
+with open("Style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
 st.set_page_config(
     page_title="KineTex - Dashboard",
     #page_icon="images/pokeball.png",
@@ -68,6 +72,8 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
         client = st.session_state.client
         db = client[members_db]
         collection = db[st.session_state.selected_domain]
+        if roll!=new_roll and collection.find_one({"roll": new_roll}):
+            return False
         update={
             "$set":
                 {
@@ -162,15 +168,15 @@ def viewpopover(popover,member):
             if update_clicked:
                 if updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
                     st.session_state.prev_msg = f"Update Successful {new_roll}"
-                    st.rerun()
                 else:
-                    st.session_state.prev_msg = f"Failed to Update {new_roll}"
+                    st.session_state.prev_msg = f"Failed to Update {roll}"
+                st.rerun()
             if delete_clicked:
                 if deletemember(roll):
                     st.session_state.prev_msg = f"Delete Successful {new_roll}"
-                    st.rerun()
                 else:
                     st.session_state.prev_msg = f"Failed to Delete {new_roll}"
+                st.rerun()
 
 
 
