@@ -50,10 +50,19 @@ def checkAccess():
         return False
 
 def addsidebarbuttons(domains):
+
+    #for Core Team
+    cdomain='CoreTeam'
+    if st.sidebar.button(cdomain,key=cdomain,width="stretch"):
+        st.session_state.selected_domain=cdomain
+        st.session_state.selected_domain_access=checkAccess()
+
+
     for domain in domains:
-        if st.sidebar.button(domain,key=domain,width="stretch"):
-            st.session_state.selected_domain=domain
-            st.session_state.selected_domain_access=checkAccess()
+        if domain!='CoreTeam':
+            if st.sidebar.button(domain,key=domain,width="stretch"):
+                st.session_state.selected_domain=domain
+                st.session_state.selected_domain_access=checkAccess()
     #st.write(f"{st.session_state.selected_domain_access}")
 
 
@@ -67,7 +76,7 @@ def deletemember(roll):
     except Exception:
         return False
 
-def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
+def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio):
     try:
         client = st.session_state.client
         db = client[members_db]
@@ -81,7 +90,8 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
                     "roll": new_roll,
                     "pos": new_pos,
                     "img_url": new_img_url,
-                    "prof_url": new_prof_url
+                    "prof_url": new_prof_url,
+                    "bio": new_bio
                 }
             }
         collection.update_one({"roll":roll}, update)
@@ -89,7 +99,7 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
     except Exception:
         return False
 
-def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url):
+def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio):
     try:
         client = st.session_state.client
         db = client[members_db]
@@ -98,13 +108,15 @@ def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url):
         # 🔎 Check if roll number already exists
         if collection.find_one({"roll": new_roll}):
             return False
-
+        ist=ex.getDateTime()
         member = {
             "name": new_name,
             "roll": new_roll,
             "pos": new_pos,
             "img_url": new_img_url,
-            "prof_url": new_prof_url
+            "prof_url": new_prof_url,
+            "bio": new_bio,
+            "time": ist
         }
         collection.insert_one(member)
         return True
@@ -120,6 +132,7 @@ def viewpopover(popover,member):
     pos=member['pos']
     img_url=member['img_url']
     prof_url=member['prof_url']
+    bio=member['bio']
     with popover:
         # Show image
         if img_url:
@@ -134,13 +147,14 @@ def viewpopover(popover,member):
         new_name = st.text_input("Name", value=name, key=f"name_{roll}",disabled=not st.session_state.selected_domain_access)
         new_roll = st.text_input("Roll No.", value=roll, key=f"roll_{roll}",disabled=not st.session_state.selected_domain_access)
         new_prof_url = st.text_input("Profile Link", value=prof_url, key=f"prof_{roll}",disabled=not st.session_state.selected_domain_access)
-
+        new_bio = st.text_area("Bio", value=bio, key=f"bio_{roll}",disabled=not st.session_state.selected_domain_access)
         # Role selector with unique key
         if st.session_state.selected_domain_access:
+            pos_list=["coordinator","associate coordinator"] if st.session_state.selected_domain=='CoreTeam' else ["member", "lead", "co-lead"]
             new_pos = st.selectbox(
                 "Position",
-                ["member", "lead", "co-lead"],
-                index=["member", "lead", "co-lead"].index(pos) if pos in ["member", "lead", "co-lead"] else 0,
+                pos_list,
+                index=pos_list.index(pos) if pos in pos_list else 0,
                 key=f"pos_{roll}"
             )
         else:
@@ -166,7 +180,7 @@ def viewpopover(popover,member):
                 delete_clicked = st.button("🗑️ Delete", key=f"delete_{roll}")
 
             if update_clicked:
-                if updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url):
+                if updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio):
                     st.session_state.prev_msg = f"Update Successful {new_roll}"
                 else:
                     st.session_state.prev_msg = f"Failed to Update {roll}"
@@ -219,13 +233,15 @@ def new_member():
             new_roll = st.text_input("Roll No.")
             new_img_url = st.text_input("Image Link")
             new_prof_url = st.text_input("Profile Link")
-            new_pos = st.selectbox("Position", ["member", "lead", "co-lead"])
+            pos_list=["coordinator","associate coordinator"] if st.session_state.selected_domain=='CoreTeam' else ["member", "lead", "co-lead"]
+            new_pos = st.selectbox("Position", pos_list)
+            new_bio = st.text_area("Bio")
 
             submitted = st.form_submit_button("✅ Add")
             if submitted:
                 try:
                     new_roll_int = int(new_roll)
-                    if addmember(new_name, new_roll_int, new_pos, new_img_url,new_prof_url):
+                    if addmember(new_name, new_roll_int, new_pos, new_img_url,new_prof_url,new_bio):
                         st.success("Member Added Successfully")
                         time.sleep(1)
                         st.rerun()

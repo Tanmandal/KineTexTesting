@@ -2,6 +2,8 @@ import requests
 from io import BytesIO
 from PIL import Image
 import re
+from datetime import datetime, timedelta, timezone
+
 
 def gdriveimg(url):
     """
@@ -25,3 +27,15 @@ def gdriveimg(url):
     except Exception as e:
         print(f"Error loading image: {e}")
         return "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pictogram_voting_comment.svg"
+
+
+def getDateTime():
+    # Define IST (UTC+5:30)
+    IST = timezone(timedelta(hours=5, minutes=30))
+
+    # Get current time in IST
+    now_ist = datetime.now(IST)
+
+    # Format without showing +05:30
+    formatted_time = now_ist.strftime("%Y-%m-%d %H:%M:%S")
+    return formatted_time
