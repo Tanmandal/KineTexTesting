@@ -211,20 +211,30 @@ def viewdomainrow(member):
 def displaytable(domain):
     members = list(domain.find())
 
-    #leads=domain.find({"pos":"lead"})
-    for lead in members:
-        if lead["pos"] == "lead":
-            viewdomainrow(lead)
+    if st.session_state.selected_domain=='CoreTeam':
+        for coordinator in members:
+            if coordinator["pos"] == "coordinator":
+                viewdomainrow(coordinator)
 
-    #co_leads=domain.find({"pos":"co_lead"})
-    for co_lead in members:
-        if co_lead["pos"] == "co-lead":
-            viewdomainrow(co_lead)
+        #co_leads=domain.find({"pos":"co_lead"})
+        for asco in members:
+            if asco["pos"] == "associate coordinator":
+                viewdomainrow(asco)
+    else:
+        #leads=domain.find({"pos":"lead"})
+        for lead in members:
+            if lead["pos"] == "lead":
+                viewdomainrow(lead)
 
-    #members=domain.find()
-    for member in members:
-        if member["pos"] not in ["lead","co-lead"]:
-            viewdomainrow(member)
+        #co_leads=domain.find({"pos":"co_lead"})
+        for co_lead in members:
+            if co_lead["pos"] == "co-lead":
+                viewdomainrow(co_lead)
+
+        #members=domain.find()
+        for member in members:
+            if member["pos"] not in ["lead","co-lead"]:
+                viewdomainrow(member)
 
 def new_member():
     with st.popover("➕ Add Member"):
