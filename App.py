@@ -5,6 +5,7 @@ from pymongo.errors import OperationFailure
 import extra as ex
 from PIL import Image
 import time
+import pandas as pd
 
 with open("Style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -16,7 +17,7 @@ st.set_page_config(
     #layout="wide"
 )
 
-members_db="TestDB"
+members_db="TestDB"#"members"
 
 if 'client' not in st.session_state:
     st.session_state.client = None
@@ -49,6 +50,80 @@ def checkAccess():
     except Exception:
         return False
 
+
+def bulk_add_csv():
+    if "csv_key" not in st.session_state:
+        st.session_state.csv_key = 0
+
+    with st.popover("📥 Import CSV"):
+        csv_file = st.file_uploader("Upload CSV file", type="csv", key=f"csv_uploader_{st.session_state.csv_key}")
+
+        if csv_file is not None:
+            try:
+                df = pd.read_csv(csv_file)
+
+                required_fields = {"time","name", "email", "img_url", "prof_url", "bio","phn_no"}
+                if not required_fields.issubset(df.columns):
+                    st.error(f"CSV must have columns: {', '.join(required_fields)}")
+                    return
+
+                # Preview CSV
+                st.dataframe(df)
+
+                if st.button("📩 Insert"):
+                    client = st.session_state.client
+                    db = client[members_db]
+                    collection = db[st.session_state.selected_domain]
+
+                    added, skipped = 0, 0
+                    for member in df.to_dict("records"):
+                        try:
+                            # ✅ derive roll from email (don't check missing roll column)
+                            email = member.get("email")
+                            if pd.isna(email):
+                                skipped += 1
+                                continue
+
+                            proll = email.split("@")[0]
+                            member["roll"] = int(proll)   # ✅ store in roll, keep email intact
+
+                            if "email" in member:
+                                del member["email"]
+
+
+                            if collection.find_one({"roll": member["roll"]}):
+                                skipped += 1
+                                continue
+
+                            # handle optional fields
+                            img_url = member.get("img_url")
+                            member["img_url"] = "" if pd.isna(img_url) else ex.gimageconvert(str(img_url))
+
+                            prof_url = member.get("prof_url")
+                            member["prof_url"] = "" if pd.isna(prof_url) else str(prof_url)
+
+                            # set defaults
+                            member["time"] = ex.getDateTime()
+                            member["pos"] = 'member'
+
+                            collection.insert_one(member)
+                            added += 1
+                        except Exception as e:
+                            st.error(f"Skipping row {member}: {e}")
+                            skipped += 1
+
+                    st.success(f"Imported: {added} member(s). Skipped: {skipped} (duplicates or errors).")
+
+                    # reset uploader
+                    st.session_state.csv_key += 1
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"Import failed: {e}")
+
+
+
+
 def addsidebarbuttons(domains):
 
     #for Core Team
@@ -76,13 +151,14 @@ def deletemember(roll):
     except Exception:
         return False
 
-def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio):
+def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio,new_phn_no):
     try:
         client = st.session_state.client
         db = client[members_db]
         collection = db[st.session_state.selected_domain]
         if roll!=new_roll and collection.find_one({"roll": new_roll}):
             return False
+        new_img_url=ex.gimageconvert(new_img_url)
         update={
             "$set":
                 {
@@ -91,7 +167,8 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio
                     "pos": new_pos,
                     "img_url": new_img_url,
                     "prof_url": new_prof_url,
-                    "bio": new_bio
+                    "bio": new_bio,
+                    "phn_no": new_phn_no
                 }
             }
         collection.update_one({"roll":roll}, update)
@@ -99,7 +176,7 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio
     except Exception:
         return False
 
-def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio):
+def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio,new_phn_no):
     try:
         client = st.session_state.client
         db = client[members_db]
@@ -109,6 +186,7 @@ def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio):
         if collection.find_one({"roll": new_roll}):
             return False
         ist=ex.getDateTime()
+        new_img_url=ex.gimageconvert(new_img_url)
         member = {
             "name": new_name,
             "roll": new_roll,
@@ -116,6 +194,7 @@ def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio):
             "img_url": new_img_url,
             "prof_url": new_prof_url,
             "bio": new_bio,
+            "phn_no": new_phn_no,
             "time": ist
         }
         collection.insert_one(member)
@@ -133,6 +212,7 @@ def viewpopover(popover,member):
     img_url=member['img_url']
     prof_url=member['prof_url']
     bio=member['bio']
+    phn_no=member['phn_no']
     with popover:
         # Show image
         if img_url:
@@ -146,6 +226,7 @@ def viewpopover(popover,member):
         # Editable fields with unique keys
         new_name = st.text_input("Name", value=name, key=f"name_{roll}",disabled=not st.session_state.selected_domain_access)
         new_roll = st.text_input("Roll No.", value=roll, key=f"roll_{roll}",disabled=not st.session_state.selected_domain_access)
+        new_phn_no = st.text_input("Phone No.", value=phn_no, key=f"phn_{roll}",disabled=not st.session_state.selected_domain_access)
         new_prof_url = st.text_input("Profile Link", value=prof_url, key=f"prof_{roll}",disabled=not st.session_state.selected_domain_access)
         new_bio = st.text_area("Bio", value=bio, key=f"bio_{roll}",disabled=not st.session_state.selected_domain_access)
         # Role selector with unique key
@@ -160,7 +241,6 @@ def viewpopover(popover,member):
         else:
             new_pos = st.text_input("Position", value=pos, key=f"pos_{roll}",disabled=not st.session_state.selected_domain_access)
 
-        new_roll=int(new_roll)
         if(st.session_state.selected_domain_access):
             st.markdown("---")
             # Action buttons with unique keys
@@ -173,6 +253,7 @@ def viewpopover(popover,member):
                 st.session_state.prev_msg=""
                 st.rerun()
 
+
             col1, col2 = st.columns(2)
             with col1:
                 update_clicked = st.button("📝 Update", key=f"update_{roll}")
@@ -180,7 +261,7 @@ def viewpopover(popover,member):
                 delete_clicked = st.button("🗑️ Delete", key=f"delete_{roll}")
 
             if update_clicked:
-                if updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio):
+                if new_roll.isnumeric() and ("0"+str(new_phn_no)).isnumeric() and updatemember(roll,new_name,int(new_roll),new_pos,new_img_url,new_prof_url,new_bio,new_phn_no):
                     st.session_state.prev_msg = f"Update Successful {new_roll}"
                 else:
                     st.session_state.prev_msg = f"Failed to Update {roll}"
@@ -191,6 +272,7 @@ def viewpopover(popover,member):
                 else:
                     st.session_state.prev_msg = f"Failed to Delete {new_roll}"
                 st.rerun()
+
 
 
 
@@ -241,6 +323,7 @@ def new_member():
         with st.form("add_member_form", clear_on_submit=True):  # 👈 this clears automatically
             new_name = st.text_input("Name")
             new_roll = st.text_input("Roll No.")
+            new_phn_no = st.text_input("Phone No.")
             new_img_url = st.text_input("Image Link")
             new_prof_url = st.text_input("Profile Link")
             pos_list=["coordinator","associate coordinator"] if st.session_state.selected_domain=='CoreTeam' else ["member", "lead", "co-lead"]
@@ -251,14 +334,15 @@ def new_member():
             if submitted:
                 try:
                     new_roll_int = int(new_roll)
-                    if addmember(new_name, new_roll_int, new_pos, new_img_url,new_prof_url,new_bio):
+                    new_phn_no= int(new_phn_no)
+                    if addmember(new_name, new_roll_int, new_pos, new_img_url,new_prof_url,new_bio,new_phn_no):
                         st.success("Member Added Successfully")
                         time.sleep(1)
                         st.rerun()
                     else:
                         st.error("Failed to Add Member")
                 except ValueError:
-                    st.error("Roll must be an integer")
+                    st.error("Roll/Phone no. Error")
 
 
 
@@ -275,14 +359,19 @@ def logedin():
 
     if(st.session_state.selected_domain):
         if st.session_state.selected_domain_access:
-            new_member()
+            with st.container():
+                col1,col2=st.columns(2)
+                with col1:
+                    new_member()
+                with col2:
+                    bulk_add_csv()
         displaytable(kinetex[st.session_state.selected_domain])
 
 
 def login():
     # Check user credentials
     uri = f"mongodb+srv://{st.session_state.username}:{st.session_state.password}@testing.awcpoes.mongodb.net/?retryWrites=true&w=majority&appName=Testing"
-
+    #@cluster0.45qgj0b.mongodb.net/"
     try:
         client = MongoClient(uri, server_api=ServerApi('1'))
         client.admin.command('ping')

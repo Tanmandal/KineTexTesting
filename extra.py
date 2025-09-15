@@ -28,6 +28,30 @@ def gdriveimg(url):
         print(f"Error loading image: {e}")
         return "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pictogram_voting_comment.svg"
 
+import re
+
+def gimageconvert(url: str) -> str:
+    if "drive.google.com" not in url:
+        return url  # not a Google Drive link
+
+    file_id = None
+
+    # Match the /d/<id>/ format
+    match = re.search(r"/d/([a-zA-Z0-9_-]+)", url)
+    if match:
+        file_id = match.group(1)
+
+    # Match the id=<id> format
+    if not file_id:
+        match = re.search(r"id=([a-zA-Z0-9_-]+)", url)
+        if match:
+            file_id = match.group(1)
+
+    if file_id:
+        return f"https://lh3.googleusercontent.com/d/{file_id}=w600-h600"
+    else:
+        return url  # fallback if no match
+
 
 def getDateTime():
     # Define IST (UTC+5:30)
