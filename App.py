@@ -17,7 +17,7 @@ st.set_page_config(
     #layout="wide"
 )
 
-members_db="TestDB"#"members"
+members_db="members"#"TestDB"
 
 if 'client' not in st.session_state:
     st.session_state.client = None
@@ -370,8 +370,9 @@ def logedin():
 
 def login():
     # Check user credentials
-    uri = f"mongodb+srv://{st.session_state.username}:{st.session_state.password}@testing.awcpoes.mongodb.net/?retryWrites=true&w=majority&appName=Testing"
-    #@cluster0.45qgj0b.mongodb.net/"
+    uri = f"mongodb+srv://{st.session_state.username}:{st.session_state.password}@cluster0.45qgj0b.mongodb.net/"
+    #@testing.awcpoes.mongodb.net/?retryWrites=true&w=majority&appName=Testing"
+
     try:
         client = MongoClient(uri, server_api=ServerApi('1'))
         client.admin.command('ping')
