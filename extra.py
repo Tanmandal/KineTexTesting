@@ -48,7 +48,7 @@ def gimageconvert(url: str) -> str:
             file_id = match.group(1)
 
     if file_id:
-        return f"https://lh3.googleusercontent.com/d/{file_id}=w600-h600"
+        return f"https://drive.google.com/thumbnail?id={file_id}&sz=w400"#f"https://lh3.googleusercontent.com/d/{file_id}=w600-h600"
     else:
         return url  # fallback if no match
 
