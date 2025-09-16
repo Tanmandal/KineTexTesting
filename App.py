@@ -95,16 +95,17 @@ def bulk_add_csv():
                                 skipped += 1
                                 continue
 
+                            # set defaults
+                            member["time"] = ex.getDateTime()
+                            member["pos"] = 'member'
                             # handle optional fields
                             img_url = member.get("img_url")
-                            member["img_url"] = "" if pd.isna(img_url) else ex.gimageconvert(str(img_url))
+                            member["img_url"] = "" if pd.isna(img_url) else ex.gimageconvert(str(img_url),str(member["roll"])+"_"+member["time"])
 
                             prof_url = member.get("prof_url")
                             member["prof_url"] = "" if pd.isna(prof_url) else str(prof_url)
 
-                            # set defaults
-                            member["time"] = ex.getDateTime()
-                            member["pos"] = 'member'
+
 
                             collection.insert_one(member)
                             added += 1
@@ -158,7 +159,7 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio
         collection = db[st.session_state.selected_domain]
         if roll!=new_roll and collection.find_one({"roll": new_roll}):
             return False
-        new_img_url=ex.gimageconvert(new_img_url)
+        new_img_url=ex.gimageconvert(new_img_url,str(new_roll)+"_"+ex.getDateTime())
         update={
             "$set":
                 {
@@ -173,7 +174,8 @@ def updatemember(roll,new_name,new_roll,new_pos,new_img_url,new_prof_url,new_bio
             }
         collection.update_one({"roll":roll}, update)
         return True
-    except Exception:
+    except Exception as e:
+        print(e)
         return False
 
 def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio,new_phn_no):
@@ -186,7 +188,7 @@ def addmember(new_name, new_roll, new_pos, new_img_url,new_prof_url,new_bio,new_
         if collection.find_one({"roll": new_roll}):
             return False
         ist=ex.getDateTime()
-        new_img_url=ex.gimageconvert(new_img_url)
+        new_img_url=ex.gimageconvert(new_img_url,str(new_roll)+"_"+ist)
         member = {
             "name": new_name,
             "roll": new_roll,
@@ -334,7 +336,8 @@ def new_member():
             if submitted:
                 try:
                     new_roll_int = int(new_roll)
-                    new_phn_no= int(new_phn_no)
+                    if len(new_phn_no)>0:
+                        new_phn_no= int(new_phn_no)
                     if addmember(new_name, new_roll_int, new_pos, new_img_url,new_prof_url,new_bio,new_phn_no):
                         st.success("Member Added Successfully")
                         time.sleep(1)
